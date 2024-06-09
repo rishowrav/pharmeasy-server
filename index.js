@@ -5,6 +5,12 @@ const app = express();
 const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
+
+const corsOptions = {
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  credentials: true,
+};
 
 // middleware
 app.use(cors(corsOptions));
@@ -68,6 +74,34 @@ async function run() {
       res
         .clearCookie("token", { ...cookieOptions, maxAge: 0 })
         .send({ success: true });
+    });
+
+    const medicineCollection = client.db("pharmeasy").collection("medichines");
+    const categoryCollection = client.db("pharmeasy").collection("category");
+
+    // get all category data
+    app.get("/categories", async (req, res) => {
+      const result = await categoryCollection.find().toArray();
+
+      res.send(result);
+    });
+
+    // get categoryDetails data
+    app.get("/categoryDetails/:category", async (req, res) => {
+      const category = req.params.category;
+      console.log(category);
+      const query = { category };
+
+      const result = await medicineCollection.find(query).toArray();
+
+      res.send(result);
+    });
+
+    // get all medicine data
+    app.get("/medicines", async (req, res) => {
+      const result = await medicineCollection.find().toArray();
+
+      res.send(result);
     });
 
     // Connect the client to the server	(optional starting in v4.7)
