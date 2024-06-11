@@ -117,11 +117,27 @@ async function run() {
       res.send(result);
     });
 
+    // get all users data
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+
+      res.send(result);
+    });
+
     // save user data from mongodb
-    app.post("/user", async (req, res) => {
+    app.put("/user", async (req, res) => {
       const user = req.body;
       console.log(user);
 
+      const query = { email: user.email };
+
+      const isExist = await usersCollection.findOne(query);
+      console.log(isExist);
+
+      // if user again log in
+      if (isExist) return res.send(isExist);
+
+      // if new user login
       const doc = {
         ...user,
       };
