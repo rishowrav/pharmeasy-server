@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
@@ -78,6 +78,7 @@ async function run() {
 
     const medicineCollection = client.db("pharmeasy").collection("medichines");
     const categoryCollection = client.db("pharmeasy").collection("category");
+    const usersCollection = client.db("pharmeasy").collection("users");
 
     // get all category data
     app.get("/categories", async (req, res) => {
@@ -100,6 +101,32 @@ async function run() {
     // get all medicine data
     app.get("/medicines", async (req, res) => {
       const result = await medicineCollection.find().toArray();
+
+      res.send(result);
+    });
+
+    // get single medicine data
+    app.get("/medicines/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+
+      const result = await medicineCollection.findOne({
+        _id: new ObjectId(id),
+      });
+
+      res.send(result);
+    });
+
+    // save user data from mongodb
+    app.post("/user", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+
+      const doc = {
+        ...user,
+      };
+
+      const result = await usersCollection.insertOne(doc);
 
       res.send(result);
     });
