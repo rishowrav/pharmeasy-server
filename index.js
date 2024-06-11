@@ -124,6 +124,22 @@ async function run() {
       res.send(result);
     });
 
+    // get all medicines data
+    app.get("/medicines", async (req, res) => {
+      const result = await medicineCollection.find().toArray();
+
+      res.send(result);
+    });
+
+    // add a new medicine data on db
+    app.post("/add_medicine", async (req, res) => {
+      const medicine = req.body;
+
+      const result = await medicineCollection.insertOne(medicine);
+
+      res.send(result);
+    });
+
     // save user data from mongodb
     app.put("/user", async (req, res) => {
       const user = req.body;
