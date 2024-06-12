@@ -99,8 +99,13 @@ async function run() {
     });
 
     // get all medicine data
-    app.get("/medicines", async (req, res) => {
-      const result = await medicineCollection.find().toArray();
+    app.get("/medicines/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+
+      const result = await medicineCollection
+        .find({ "author.email": email })
+        .toArray();
 
       res.send(result);
     });
@@ -120,13 +125,6 @@ async function run() {
     // get all users data
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
-
-      res.send(result);
-    });
-
-    // get all medicines data
-    app.get("/medicines", async (req, res) => {
-      const result = await medicineCollection.find().toArray();
 
       res.send(result);
     });
