@@ -79,6 +79,7 @@ async function run() {
     const medicineCollection = client.db("pharmeasy").collection("medichines");
     const categoryCollection = client.db("pharmeasy").collection("category");
     const usersCollection = client.db("pharmeasy").collection("users");
+    const advertiseCollection = client.db("pharmeasy").collection("advertise");
 
     // get all category data
     app.get("/categories", async (req, res) => {
@@ -98,13 +99,22 @@ async function run() {
       res.send(result);
     });
 
-    // get all medicine data
+    // get all medicine data with email
     app.get("/medicines/:email", async (req, res) => {
       const email = req.params.email;
       console.log(email);
 
       const result = await medicineCollection
         .find({ "author.email": email })
+        .toArray();
+
+      res.send(result);
+    });
+
+    // get all medicine data
+    app.get("/allMedicines/:category", async (req, res) => {
+      const result = await medicineCollection
+        .find({ category: req.params.category })
         .toArray();
 
       res.send(result);
@@ -129,11 +139,32 @@ async function run() {
       res.send(result);
     });
 
+    // get all medicine data with email
+    app.get("/medicines/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+
+      const result = await medicineCollection
+        .find({ "author.email": email })
+        .toArray();
+
+      res.send(result);
+    });
+
     // add a new medicine data on db
     app.post("/add_medicine", async (req, res) => {
       const medicine = req.body;
 
       const result = await medicineCollection.insertOne(medicine);
+
+      res.send(result);
+    });
+
+    // add a new advertise data on db
+    app.post("/advertise", async (req, res) => {
+      const advertise = req.body;
+
+      const result = await advertiseCollection.insertOne(advertise);
 
       res.send(result);
     });
