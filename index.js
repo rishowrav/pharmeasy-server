@@ -139,13 +139,28 @@ async function run() {
       res.send(result);
     });
 
-    // get all medicine data with email
-    app.get("/medicines/:email", async (req, res) => {
+    // get all advertise data with email
+    app.get("/advertise/:email", async (req, res) => {
       const email = req.params.email;
-      console.log(email);
 
-      const result = await medicineCollection
+      const result = await advertiseCollection
         .find({ "author.email": email })
+        .toArray();
+
+      res.send(result);
+    });
+
+    // get all advertise data for admin
+    app.get("/advertise", async (req, res) => {
+      const result = await advertiseCollection.find().toArray();
+
+      res.send(result);
+    });
+
+    // get all advertise data for Home page
+    app.get("/advertise_home_page", async (req, res) => {
+      const result = await advertiseCollection
+        .find({ status: "Remove from Slide" })
         .toArray();
 
       res.send(result);
@@ -192,6 +207,28 @@ async function run() {
       res.send(result);
     });
 
+    // update advertise status
+    app.put("/advertise_status_update", async (req, res) => {
+      const status = req.body.status;
+      const id = req.body.id;
+
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: {
+          status: status,
+        },
+      };
+
+      const result = await advertiseCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
     // delete medicine data
     app.delete("/medicine_delete/:id", async (req, res) => {
       const id = req.params.id;
@@ -199,6 +236,16 @@ async function run() {
       const query = { _id: new ObjectId(id) };
 
       const result = await medicineCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // delete advertise data
+    app.delete("/advertise/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await advertiseCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
       res.send(result);
     });
 
