@@ -80,6 +80,7 @@ async function run() {
     const categoryCollection = client.db("pharmeasy").collection("category");
     const usersCollection = client.db("pharmeasy").collection("users");
     const advertiseCollection = client.db("pharmeasy").collection("advertise");
+    const cartCollection = client.db("pharmeasy").collection("cart");
 
     // get all category data
     app.get("/categories", async (req, res) => {
@@ -160,7 +161,7 @@ async function run() {
     // get all advertise data for Home page
     app.get("/advertise_home_page", async (req, res) => {
       const result = await advertiseCollection
-        .find({ status: "Remove from Slide" })
+        .find({ status: "Add to Slide" })
         .toArray();
 
       res.send(result);
@@ -181,6 +182,19 @@ async function run() {
 
       const result = await advertiseCollection.insertOne(advertise);
 
+      res.send(result);
+    });
+
+    app.post("/cart", async (req, res) => {
+      const cart = req.body;
+
+      const isExist = await cartCollection.findOne({
+        medicine_name: cart.medicine_name,
+      });
+
+      if (isExist) return res.send({ message: "already add to cart" });
+
+      const result = await cartCollection.insertOne(cart);
       res.send(result);
     });
 
