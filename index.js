@@ -167,6 +167,17 @@ async function run() {
       res.send(result);
     });
 
+    // get all cart data with own user email
+    app.get("/cart/:email", async (req, res) => {
+      const email = req.params.email;
+
+      console.log(email);
+      const result = await cartCollection
+        .find({ "cart_user.email": email })
+        .toArray();
+      res.send(result);
+    });
+
     // add a new medicine data on db
     app.post("/add_medicine", async (req, res) => {
       const medicine = req.body;
@@ -185,6 +196,7 @@ async function run() {
       res.send(result);
     });
 
+    // save cart data to db
     app.post("/cart", async (req, res) => {
       const cart = req.body;
 
