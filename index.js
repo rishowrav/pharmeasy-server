@@ -276,6 +276,29 @@ async function run() {
       res.send(result);
     });
 
+    // update user role
+    app.put("/userRoleUpdate", async (req, res) => {
+      const id = req.body.id;
+      const role = req.body.role;
+
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: {
+          role: role,
+        },
+      };
+
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+
+      res.send(result);
+    });
+
     // delete medicine data
     app.delete("/medicine_delete/:id", async (req, res) => {
       const id = req.params.id;
