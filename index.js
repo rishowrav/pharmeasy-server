@@ -133,6 +133,12 @@ async function run() {
       res.send(result);
     });
 
+    // get all medicines data
+    app.get("/medicines", async (req, res) => {
+      const result = await medicineCollection.find().toArray();
+      res.send(result);
+    });
+
     // get all users data
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -175,6 +181,21 @@ async function run() {
       const result = await cartCollection
         .find({ "cart_user.email": email })
         .toArray();
+      res.send(result);
+    });
+
+    // get all category data in db
+    app.get("/categories", async (req, res) => {
+      const result = await categoryCollection.find().toArray();
+      res.send(result);
+    });
+
+    // add a new category data in db
+    app.post("/category", async (req, res) => {
+      const category = req.body;
+      console.log(category);
+      const result = await categoryCollection.insertOne(category);
+
       res.send(result);
     });
 
@@ -272,6 +293,16 @@ async function run() {
         _id: new ObjectId(id),
       });
 
+      res.send(result);
+    });
+
+    // delete category
+    app.delete("/category/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const result = await categoryCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
