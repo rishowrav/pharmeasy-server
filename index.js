@@ -57,10 +57,26 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    const medicineCollection = client.db("pharmeasy").collection("medichines");
+    const categoryCollection = client.db("pharmeasy").collection("category");
+    const usersCollection = client.db("pharmeasy").collection("users");
+    const advertiseCollection = client.db("pharmeasy").collection("advertise");
+    const cartCollection = client.db("pharmeasy").collection("cart");
+
+    // Admin Verify
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.user.email;
+      const user = await usersCollection.findOne({ email });
+
+      if (!user || user?.role !== "Admin")
+        return res.status(401).send({ message: "Unauthorize access" });
+
+      next();
+    };
+
     // auth related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
-      console.log("user for token", user);
 
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
 
@@ -68,19 +84,13 @@ async function run() {
     });
 
     // clearing Token / LogOut token
-    app.post("/logout", async (req, res) => {
+    app.get("/logout", async (req, res) => {
       const user = req.body;
 
       res
         .clearCookie("token", { ...cookieOptions, maxAge: 0 })
         .send({ success: true });
     });
-
-    const medicineCollection = client.db("pharmeasy").collection("medichines");
-    const categoryCollection = client.db("pharmeasy").collection("category");
-    const usersCollection = client.db("pharmeasy").collection("users");
-    const advertiseCollection = client.db("pharmeasy").collection("advertise");
-    const cartCollection = client.db("pharmeasy").collection("cart");
 
     // get all category data
     app.get("/categories", async (req, res) => {
@@ -140,10 +150,18 @@ async function run() {
     });
 
     // get all users data
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
 
       res.send(result);
+    });
+
+    // get user auth
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await usersCollection.findOne({ email });
+
+      res.send(user);
     });
 
     // get all advertise data with email
@@ -326,6 +344,17 @@ async function run() {
       const result = await categoryCollection.deleteOne({
         _id: new ObjectId(id),
       });
+      res.send(result);
+    });
+
+    // cart delete api
+    app.delete("/cart/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const result = await cartCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
       res.send(result);
     });
 
