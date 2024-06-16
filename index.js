@@ -74,6 +74,17 @@ async function run() {
       next();
     };
 
+    // Seller Verify
+    const verifySeller = async (req, res, next) => {
+      const email = req.user.email;
+      const user = await usersCollection.findOne({ email });
+
+      if (!user || user?.role !== "Seller")
+        return res.status(401).send({ message: "Unauthorize access" });
+
+      next();
+    };
+
     // auth related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -176,7 +187,7 @@ async function run() {
     });
 
     // get all advertise data for admin
-    app.get("/advertise", async (req, res) => {
+    app.get("/advertise", verifyToken, async (req, res) => {
       const result = await advertiseCollection.find().toArray();
 
       res.send(result);
@@ -209,7 +220,7 @@ async function run() {
     });
 
     // add a new category data in db
-    app.post("/category", async (req, res) => {
+    app.post("/category", verifyToken, verifyAdmin, async (req, res) => {
       const category = req.body;
       console.log(category);
       const result = await categoryCollection.insertOne(category);
@@ -218,7 +229,7 @@ async function run() {
     });
 
     // add a new medicine data on db
-    app.post("/add_medicine", async (req, res) => {
+    app.post("/add_medicine", verifyToken, verifySeller, async (req, res) => {
       const medicine = req.body;
 
       const result = await medicineCollection.insertOne(medicine);
@@ -227,7 +238,7 @@ async function run() {
     });
 
     // add a new advertise data on db
-    app.post("/advertise", async (req, res) => {
+    app.post("/advertise", verifyToken, verifySeller, async (req, res) => {
       const advertise = req.body;
 
       const result = await advertiseCollection.insertOne(advertise);
@@ -273,29 +284,34 @@ async function run() {
     });
 
     // update advertise status
-    app.put("/advertise_status_update", async (req, res) => {
-      const status = req.body.status;
-      const id = req.body.id;
+    app.put(
+      "/advertise_status_update",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const status = req.body.status;
+        const id = req.body.id;
 
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
+        const filter = { _id: new ObjectId(id) };
+        const options = { upsert: true };
 
-      const updateDoc = {
-        $set: {
-          status: status,
-        },
-      };
+        const updateDoc = {
+          $set: {
+            status: status,
+          },
+        };
 
-      const result = await advertiseCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
-      res.send(result);
-    });
+        const result = await advertiseCollection.updateOne(
+          filter,
+          updateDoc,
+          options
+        );
+        res.send(result);
+      }
+    );
 
     // update user role
-    app.put("/userRoleUpdate", async (req, res) => {
+    app.put("/userRoleUpdate", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.body.id;
       const role = req.body.role;
 
@@ -318,27 +334,37 @@ async function run() {
     });
 
     // delete medicine data
-    app.delete("/medicine_delete/:id", async (req, res) => {
-      const id = req.params.id;
+    app.delete(
+      "/medicine_delete/:id",
+      verifyToken,
+      verifySeller,
+      async (req, res) => {
+        const id = req.params.id;
 
-      const query = { _id: new ObjectId(id) };
+        const query = { _id: new ObjectId(id) };
 
-      const result = await medicineCollection.deleteOne(query);
-      res.send(result);
-    });
+        const result = await medicineCollection.deleteOne(query);
+        res.send(result);
+      }
+    );
 
     // delete advertise data
-    app.delete("/advertise/:id", async (req, res) => {
-      const id = req.params.id;
-      const result = await advertiseCollection.deleteOne({
-        _id: new ObjectId(id),
-      });
+    app.delete(
+      "/advertise/:id",
+      verifyToken,
+      verifySeller,
+      async (req, res) => {
+        const id = req.params.id;
+        const result = await advertiseCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
 
-      res.send(result);
-    });
+        res.send(result);
+      }
+    );
 
     // delete category
-    app.delete("/category/:id", async (req, res) => {
+    app.delete("/category/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
 
       const result = await categoryCollection.deleteOne({
