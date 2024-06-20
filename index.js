@@ -6,6 +6,7 @@ const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const stripe = require("stripe").Stripe(process.env.STRIPE_secret_key);
 
 const corsOptions = {
   origin: ["http://localhost:5173", "http://localhost:5174"],
@@ -62,6 +63,7 @@ async function run() {
     const usersCollection = client.db("pharmeasy").collection("users");
     const advertiseCollection = client.db("pharmeasy").collection("advertise");
     const cartCollection = client.db("pharmeasy").collection("cart");
+    const paymentCollection = client.db("pharmeasy").collection("payment");
 
     // Admin Verify
     const verifyAdmin = async (req, res, next) => {
@@ -219,6 +221,53 @@ async function run() {
       res.send(result);
     });
 
+    // get payment history data
+    app.get("/payment/:email", async (req, res) => {
+      const email = req.params.email;
+
+      const result = await paymentCollection
+        .find({ "buyerInfo.email": email })
+        .toArray();
+      res.send(result);
+    });
+
+    // get payment sales data
+    app.get("/paymentForAdmin", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await paymentCollection.find().toArray();
+      const totalSales = result.reduce((sum, curr) => {
+        return sum + parseInt(curr.price);
+      }, 0);
+
+      res.send({ totalSales });
+    });
+
+    // get payment sales data
+    app.get("/salseReport", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await paymentCollection.find().toArray();
+
+      res.send(result);
+    });
+
+    // (stripe) generate client secret key
+    app.post("/create-payment-intent", verifyToken, async (req, res) => {
+      const price = req.body.price;
+      const priceInCent = parseFloat(price) * 100;
+
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: priceInCent,
+        currency: "usd",
+        // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
     // add a new category data in db
     app.post("/category", verifyToken, verifyAdmin, async (req, res) => {
       const category = req.body;
@@ -251,12 +300,20 @@ async function run() {
       const cart = req.body;
 
       const isExist = await cartCollection.findOne({
-        medicine_name: cart.medicine_name,
+        medicineName: cart.medicineName,
       });
 
       if (isExist) return res.send({ message: "already add to cart" });
 
       const result = await cartCollection.insertOne(cart);
+      res.send(result);
+    });
+
+    // payment history
+    app.post("/payment", async (req, res) => {
+      const payment = req.body;
+
+      const result = await paymentCollection.insertOne(payment);
       res.send(result);
     });
 
@@ -372,6 +429,24 @@ async function run() {
       });
       res.send(result);
     });
+
+    // delete cart data
+    app.delete(
+      "/cart-delete/:email",
+      verifyToken,
+
+      async (req, res) => {
+        const email = req.params.email;
+
+        console.log("delete cart email: ", email);
+
+        const query = { "cart_user.email": { $regex: email } };
+        const result = await cartCollection.deleteMany(query);
+
+        console.log("delete cart", result);
+        res.send(result);
+      }
+    );
 
     // cart delete api
     app.delete("/cart/:id", async (req, res) => {
