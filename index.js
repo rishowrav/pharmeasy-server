@@ -9,7 +9,11 @@ const cors = require("cors");
 const stripe = require("stripe").Stripe(process.env.STRIPE_secret_key);
 
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://pharmeasy-client.web.app",
+  ],
   credentials: true,
 };
 
@@ -242,6 +246,20 @@ async function run() {
     });
 
     // get payment sales data
+    app.get("/paymentForUser", verifyToken, async (req, res) => {
+      const email = req.user.email;
+      console.log(email);
+      const result = await paymentCollection
+        .find({ "buyerInfo.email": email })
+        .toArray();
+      const totalSales = result.reduce((sum, curr) => {
+        return sum + parseInt(curr.price);
+      }, 0);
+
+      res.send({ totalSales });
+    });
+
+    // get payment sales data
     app.get("/salseReport", verifyToken, verifyAdmin, async (req, res) => {
       const result = await paymentCollection.find().toArray();
 
@@ -462,7 +480,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
